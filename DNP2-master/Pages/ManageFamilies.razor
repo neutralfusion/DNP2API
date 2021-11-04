@@ -1,0 +1,74 @@
+@page "/ManageFamilies"
+@using Microsoft.AspNetCore.Components
+@using Models
+@using DNP2.Data
+@inject APIConnection api
+@inject NavigationManager NavigationManager
+<AuthorizeView><Authorized Context="LoggedIn"><h3>ManageFamilies</h3>
+<h4>Add new families:</h4>
+        <EditForm Model="@newFamily" OnValidSubmit="@AddNewFamily">
+            <DataAnnotationsValidator/> <ValidationSummary/>
+            <div class="form-group"> Street Name:<br/> <InputTextArea rows="4" @bind-Value="newFamily.StreetName"/> </div>
+            <div class="form-group"> House Number:<br/> <InputNumber rows="4" @bind-Value="newFamily.HouseNumber"/> </div>
+            <p class="actions">
+                <button class="btn btn-outline-dark" type="submit">Create</button>
+            </p>
+        </EditForm>
+        <h4>Add Adults/Children/Pets</h4>
+        <div>
+            <details >
+                <summary>Click here to add an adult</summary>
+                <AddAdult/>
+            </details>
+            <details >
+                <summary>Click here to add a child</summary>
+                <AddChild/>
+            </details>
+            <details >
+                <summary>Click here to add a pet for a child</summary>
+                <AddPet/>
+            </details>
+            <details >
+                <summary>Click here to add an interest for a child</summary>
+                <AddInterests/>
+            </details></div>
+        <h4>Remove families</h4>
+        <EditForm Model="@familyID" OnValidSubmit="@RemoveFamily">
+            <DataAnnotationsValidator/> <ValidationSummary/>
+            <div class="form-group">
+                Family ID: <br/>
+                <select @bind="familyID">
+                    @if (Families != null)
+                    {
+                        @foreach (var family in Families)
+                        {
+                            <option value="@family.Id">@family.Id</option>
+                        }
+                    }
+                </select>
+            </div>
+            <p class="actions">
+                <button class="btn btn-outline-dark" type="submit">Remove</button>
+            </p>
+        </EditForm></Authorized><NotAuthorized Context="LoggedOut">You need to login as an admin in order to manage families.</NotAuthorized></AuthorizeView>
+
+@code {
+    private Family newFamily = new Family();
+    List<Family> Families;
+    protected override async Task OnInitializedAsync()
+    {
+        Families = await api.FetchFamiliesAsync();
+    }
+    private async void AddNewFamily()
+    {
+        await api.CreateFamily(newFamily);
+        NavigationManager.NavigateTo("/ViewFamilies");
+    }
+    int familyID=1;
+    private async void RemoveFamily()
+    {
+        await api.DeleteFamily(familyID);
+        NavigationManager.NavigateTo("/ViewFamilies");
+    }
+
+}

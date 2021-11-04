@@ -1,0 +1,90 @@
+@page "/ViewFamilies"
+@using Models
+@using DNP2.Data
+@inject APIConnection api
+
+<h3>ViewFamilies </h3>
+<p> Search(ID, first name, last name): <input type="text" @oninput="@((arg) => Search(arg))" style="width:50px"/> </p>
+@if (familiesToShow == null)
+{
+    <p>
+        <em>Loading...</em>
+    </p>
+}
+else if (!familiesToShow.Any())
+{
+    <p>
+        <em>There is no family added, but you can add some.</em>
+    </p>
+}
+else
+{
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Family ID</th> <th>Adults</th> <th>Children</th> <th>Street name</th> <th>House number</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in familiesToShow)
+        {
+            <tr>
+                <td>@item.Id</td>
+                <td>
+                    @foreach (var adult in item.Adults)
+                    {
+                        @adult.ToString()
+                        
+                        <br/>
+                    }
+                </td>
+                <td>
+                    @if (item.Children != null)
+                    {
+                        foreach (var child in item.Children)
+                        {
+                            @child.ToString()
+                            
+                            <br/>
+                        }
+                    }
+                    else
+                    {
+                        @string.Empty
+                    }
+                </td>
+                <td>@item.StreetName</td> <td>@item.HouseNumber</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IList<Family> familiesToShow;
+    private List<Family> Families;
+
+    protected override async Task OnInitializedAsync()
+    {
+        familiesToShow = await api.FetchFamiliesAsync();
+    }
+
+    private async void Search(ChangeEventArgs changeEventArgs)
+    {
+        int? search = null;
+        string? searchAdult = null;
+        try
+        {
+            search = int.Parse(changeEventArgs.Value.ToString());
+            familiesToShow = await api.FetchFamiliesAsync(search, searchAdult);
+        }
+        catch (Exception e)
+        {
+            search = null;
+            searchAdult = changeEventArgs.Value.ToString();
+            familiesToShow = await api.FetchFamiliesAsync(search,searchAdult);
+        }
+        
+    }
+
+}

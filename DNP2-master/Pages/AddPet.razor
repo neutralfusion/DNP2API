@@ -1,0 +1,60 @@
+@using Microsoft.AspNetCore.Components
+@using Models
+@using DNP2.Data
+@inject NavigationManager NavigationManager
+@inject APIConnection api
+<EditForm Model="@newPet" OnValidSubmit="@AddNewAdultToFamily">
+    <DataAnnotationsValidator/> <ValidationSummary/>
+    <div class="form-group">
+        Family ID: <br/>
+        <select @bind="familyID">
+            @if (Families != null)
+            {
+                @foreach (var family in Families)
+                {
+                    <option value="@family.Id">@family.Id</option>
+                }
+            }
+        </select>
+    </div>
+    @if(familyID==0)
+        {
+            string request ="First, you have to select a family ID";
+            @request
+        }
+    else
+    {
+        <div class="form-group"> Child's name:<br/> <InputText rows="4" @bind-Value="name"/> </div>
+        <div class="form-group"> Pet name:<br/> <InputText rows="4" @bind-Value="newPet.Name"/> </div>
+        <div class="form-group"> Pet species:<br/> <InputText rows="4" @bind-Value="newPet.Species"/> </div>
+        <div class="form-group"> Age:<br/> <InputNumber rows="4" @bind-Value="newPet.Age"/> </div>
+        <p class="actions">
+            <button class="btn btn-outline-dark" type="submit">Create</button>
+        </p>
+    }
+</EditForm>
+
+@code {
+    private Pet newPet = new Pet();
+    private string name;
+    private int familyID = 0;
+    List<Family> Families;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Families = await api.FetchFamiliesAsync();
+    }
+
+    private async void AddNewAdultToFamily()
+    {
+        Family familyToUpdate = Families.FirstOrDefault(t => t.Id == familyID);
+        if (familyToUpdate.Children.FirstOrDefault(c => c.FirstName.ToLower().Equals(name.ToLower())).Pets == null)
+        {
+            familyToUpdate.Children.FirstOrDefault(c => c.FirstName.ToLower().Equals(name.ToLower())).Pets = new List<Pet>();
+        }
+        familyToUpdate.Children.FirstOrDefault(c => c.FirstName.ToLower().Equals(name.ToLower())).Pets.Add(newPet);
+        await api.UpdateFamily(familyToUpdate);
+        NavigationManager.NavigateTo("/ViewFamilies");
+    }
+
+}

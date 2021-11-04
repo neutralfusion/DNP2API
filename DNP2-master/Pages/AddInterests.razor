@@ -1,0 +1,59 @@
+@using Microsoft.AspNetCore.Components
+@using Models
+@using DNP2.Data
+@inject NavigationManager NavigationManager
+@inject APIConnection api
+<EditForm Model="@newInterest" OnValidSubmit="@AddNewAdultToFamily">
+    <DataAnnotationsValidator/> <ValidationSummary/>
+    <div class="form-group">
+        Family ID: <br/>
+        <select @bind="familyID">
+            @if (Families != null)
+            {
+                @foreach (var family in Families)
+                {
+                    <option value="@family.Id">@family.Id</option>
+                }
+            }
+        </select>
+    </div>
+    @if(familyID==0)
+        {
+            string request ="First, you have to select a family ID";
+            @request
+        }
+    else
+    {
+        <div class="form-group"> Child's name:<br/> <InputText rows="4" @bind-Value="name"/> </div>
+        <div class="form-group"> Interest Type:<br/> <InputText rows="4" @bind-Value="newInterest.Type"/> </div>
+        <div class="form-group"> Description:<br/> <InputTextArea rows="4" @bind-Value="newInterest.Description"/> </div>
+        <p class="actions">
+            <button class="btn btn-outline-dark" type="submit">Create</button>
+        </p>
+    }
+</EditForm>
+
+@code {
+    private Interest newInterest = new Interest();
+    private string name;
+    private int familyID = 0;
+    List<Family> Families;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Families = await api.FetchFamiliesAsync();
+    }
+
+    private async void AddNewAdultToFamily()
+    {
+        Family familyToUpdate = Families.FirstOrDefault(t => t.Id == familyID);
+        if (familyToUpdate.Children.FirstOrDefault(c => c.FirstName.ToLower().Equals(name)).Interests == null)
+        {
+            familyToUpdate.Children.FirstOrDefault(c => c.FirstName.ToLower().Equals(name)).Interests = new List<Interest>();
+        }
+        familyToUpdate.Children.FirstOrDefault(c => c.FirstName.ToLower().Equals(name)).Interests.Add(newInterest);
+        await api.UpdateFamily(familyToUpdate);
+        NavigationManager.NavigateTo("/ViewFamilies");
+    }
+
+}

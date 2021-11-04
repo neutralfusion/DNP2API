@@ -1,0 +1,70 @@
+@using Microsoft.AspNetCore.Components
+@using Models
+@using DNP2.Data
+@inject NavigationManager NavigationManager
+@inject APIConnection api
+
+<EditForm Model="@newChild" OnValidSubmit="@AddNewChildToFamily">
+    <DataAnnotationsValidator/> <ValidationSummary/>
+    <div class="form-group">
+        Family ID: <br/>
+        <select @bind="familyID">
+            @if (Families != null)
+            {
+                @foreach (var family in Families)
+                {
+                    <option value="@family.Id">@family.Id</option>
+                }
+            }
+        </select>
+    </div>
+    @if(familyID==0)
+        {
+            string request ="First, you have to select a family ID";
+            @request
+        }
+    else
+    {
+        <div class="form-group"> First Name:<br/> <InputText rows="4" @bind-Value="newChild.FirstName"/> </div>
+        <div class="form-group"> Last Name:<br/> <InputText rows="4" @bind-Value="newChild.LastName"/> </div>
+        <div class="form-group"> Hair Color:<br/> <InputText rows="4" @bind-Value="newChild.HairColor"/> </div>
+        <div class="form-group"> Eye Color:<br/> <InputText rows="4" @bind-Value="newChild.EyeColor"/> </div>
+        <div class="form-group"> Age:<br/> <InputNumber rows="4" @bind-Value="newChild.Age"/> </div>
+        <div class="form-group"> Weight:<br/> <InputNumber rows="4" @bind-Value="newChild.Weight"/> </div>
+        <div class="form-group"> Height:<br/> <InputNumber rows="4" @bind-Value="newChild.Height"/> </div>
+        <div class="form-group"> Gender:<br/> <InputText rows="4" @bind-Value="newChild.Sex"/> </div>
+        <p class="actions">
+            <button class="btn btn-outline-dark" type="submit">Create</button>
+        </p>
+    }
+</EditForm>
+
+@code {
+    List<Family> Families;
+    private Child newChild = new Child()
+    {
+        Pets = new List<Pet>(),
+        Interests = new List<Interest>(),
+    };
+
+    private int familyID;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Families = await api.FetchFamiliesAsync();
+    }
+    private async void AddNewChildToFamily()
+    {
+        Family familyToUpdate = Families.FirstOrDefault(t => t.Id == familyID);
+        if (familyToUpdate.Children == null)
+        {
+            familyToUpdate.Children = new List<Child>();
+        }
+        
+        newChild.Id = familyToUpdate.Children.Count+1;
+        familyToUpdate.Children.Add(newChild);
+        await api.UpdateFamily(familyToUpdate);
+        NavigationManager.NavigateTo("/ViewFamilies");
+    }
+
+}
